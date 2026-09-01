@@ -459,11 +459,21 @@ window.addEventListener("keydown", function(event) {
 });
 
 
-resetGame();
+bird = {
+    x: W * 0.25,
+    y: H * 0.45,
+    radius: 18,
+    velocity: 0
+};
+
+pipes = [];
+score = 0;
+pipeTimer = 0;
 running = false;
 
 gameOverText.style.display = "none";
 startButton.textContent = "Start Game";
+startButton.style.display = "inline-block";
 
 lastTime = performance.now();
 
