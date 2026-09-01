@@ -1,0 +1,10 @@
+{
+  "name": "Flying Bird",
+  "short_name": "Flying Bird",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#70c5ce",
+  "theme_color": "#70c5ce",
+  "description": "A simple flying bird game.",
+  "icons": []
+}
