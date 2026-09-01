@@ -7,6 +7,8 @@
                maximum-scale=1.0, user-scalable=no">
 
 <title>Flying Bird</title>
+<link rel="manifest" href="./
+manifest.json">
 
 <style>
     * {
@@ -482,4 +484,9 @@ requestAnimationFrame(gameLoop);
 </script>
 
 </body>
+<script>
+if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("./sw.js");
+}
+</script>
 </html>
