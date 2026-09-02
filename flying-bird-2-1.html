@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Flying Bird 2</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#76cfe3}
+body{touch-action:none;font-family:Arial,sans-serif}#game{width:100%;height:100%;position:relative}
+canvas{width:100%;height:100%;display:block}#hud{position:absolute;top:14px;left:0;width:100%;text-align:center;color:white;text-shadow:0 2px 4px #345;font-weight:bold;pointer-events:none}
+#score{font-size:48px}#best{font-size:18px}.panel{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:#17374622}
+.card{width:min(88%,360px);padding:28px 22px;border-radius:22px;text-align:center;background:#fffffff2;box-shadow:0 12px 35px #0003}
+h1{margin:0 0 8px;font-size:34px;color:#263746}p{margin:8px 0 20px;color:#52616d;font-size:17px;line-height:1.4}
+button{min-height:50px;padding:12px 28px;border:0;border-radius:14px;background:#2e9f58;color:white;font-size:19px;font-weight:bold}
+.hidden{display:none!important}
+</style>
+</head>
+<body>
+<div id="game">
+<canvas id="canvas"></canvas>
+<div id="hud"><div id="score">0</div><div id="best">🏆 High Score: 0</div></div>
+<div id="panel" class="panel"><div class="card">
+<h1 id="title">🐦 Flying Bird 2</h1>
+<p id="message">Tap the screen to flap.<br>Fly through the gaps and beat your high score!</p>
+<button id="start">Start Game</button>
+</div></div>
+</div>
+
+<script>
+(() => {
+const canvas=document.getElementById("canvas"),ctx=canvas.getContext("2d");
+const scoreEl=document.getElementById("score"),bestEl=document.getElementById("best");
+const panel=document.getElementById("panel"),title=document.getElementById("title");
+const message=document.getElementById("message"),startBtn=document.getElementById("start");
+let W,H,dpr=1,bird,pipes=[],score=0,best=0,running=false,last=0,spawn=0,ground=0,clouds=[];
+try{best=Number(localStorage.getItem("flyingBird2HighScore"))||0}catch(e){}
+bestEl.textContent="🏆 High Score: "+best;
+
+function resize(){
+ dpr=Math.min(devicePixelRatio||1,2);W=innerWidth;H=innerHeight;
+ canvas.width=W*dpr;canvas.height=H*dpr;ctx.setTransform(dpr,0,0,dpr,0,0);
+ clouds=Array.from({length:7},()=>({x:Math.random()*W,y:40+Math.random()*H*.4,s:.6+Math.random()*.9}));
+}
+addEventListener("resize",resize);
+
+function flap(){if(running)bird.vy=-7.4}
+function start(){
+ pipes=[];score=0;scoreEl.textContent="0";ground=0;spawn=0;
+ bird={x:W*.23,y:H*.43,vy:0,r:17,wing:-.2,wingDir:1,rot:0};
+ running=true;panel.classList.add("hidden");title.textContent="🐦 Flying Bird 2";
+ last=performance.now();addPipe();requestAnimationFrame(loop);
+}
+function addPipe(){
+ const gap=Math.max(145,Math.min(185,H*.24)),min=70,groundY=H*.13;
+ const max=H-groundY-gap-70,top=min+(max>min?Math.random()*(max-min):0);
+ pipes.push({x:W+50,w:70,top,gap,passed:false});
+}
+function sky(){
+ const g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,"#58c5e1");g.addColorStop(.72,"#b9edf0");g.addColorStop(1,"#dff5d0");
+ ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+ ctx.fillStyle="#ffffffb8";
+ for(const c of clouds){ctx.beginPath();ctx.arc(c.x,c.y,22*c.s,0,7);ctx.arc(c.x+25*c.s,c.y-8*c.s,27*c.s,0,7);ctx.arc(c.x+52*c.s,c.y,20*c.s,0,7);ctx.fill()}
+}
+function pipe(p){
+ const b=p.top+p.gap,g=H*.13;
+ ctx.fillStyle="#43a94d";ctx.strokeStyle="#277a35";ctx.lineWidth=3;
+ ctx.fillRect(p.x,0,p.w,p.top);ctx.strokeRect(p.x,0,p.w,p.top);
+ ctx.fillRect(p.x,b,p.w,H-g-b);ctx.strokeRect(p.x,b,p.w,H-g-b);
+ ctx.fillStyle="#62c95c";ctx.fillRect(p.x-6,p.top-25,p.w+12,25);ctx.strokeRect(p.x-6,p.top-25,p.w+12,25);
+ ctx.fillRect(p.x-6,b,p.w+12,25);ctx.strokeRect(p.x-6,b,p.w+12,25);
+}
+function birdDraw(){
+ ctx.save();ctx.translate(bird.x,bird.y);ctx.rotate(bird.rot);
+ ctx.fillStyle="#704326";ctx.beginPath();ctx.moveTo(-14,3);ctx.lineTo(-34,-7);ctx.lineTo(-27,4);ctx.lineTo(-34,14);ctx.closePath();ctx.fill();
+ ctx.save();ctx.translate(-4,4);ctx.rotate(bird.wing);ctx.fillStyle="#8a6035";ctx.beginPath();ctx.ellipse(-5,9,21,8,-.35,0,7);ctx.fill();ctx.restore();
+ const grad=ctx.createRadialGradient(-4,-5,2,0,0,23);grad.addColorStop(0,"#d7a86c");grad.addColorStop(.7,"#a96f3c");grad.addColorStop(1,"#704326");
+ ctx.fillStyle=grad;ctx.beginPath();ctx.ellipse(0,2,23,17,0,0,7);ctx.fill();
+ ctx.fillStyle="#b77b43";ctx.beginPath();ctx.arc(14,-9,15,0,7);ctx.fill();
+ ctx.save();ctx.translate(2,3);ctx.rotate(bird.wing);ctx.fillStyle="#704326";ctx.beginPath();ctx.ellipse(-3,11,18,7,-.25,0,7);ctx.fill();ctx.restore();
+ ctx.fillStyle="white";ctx.beginPath();ctx.arc(20,-13,5.5,0,7);ctx.fill();ctx.fillStyle="#111";ctx.beginPath();ctx.arc(21,-13,2.5,0,7);ctx.fill();
+ ctx.fillStyle="#d87528";ctx.beginPath();ctx.moveTo(27,-7);ctx.lineTo(41,-2);ctx.lineTo(27,1);ctx.closePath();ctx.fill();
+ ctx.restore();
+}
+function groundDraw(){
+ const y=H*.87;ctx.fillStyle="#79bd5c";ctx.fillRect(0,y,W,H-y);ctx.fillStyle="#5a9d45";ctx.fillRect(0,y,W,6);
+ ctx.strokeStyle="#46823788";ctx.lineWidth=2;
+ for(let x=-40+(ground%40);x<W+40;x+=40){ctx.beginPath();ctx.moveTo(x,y+8);ctx.lineTo(x-12,H);ctx.stroke()}
+}
+function collision(){
+ if(bird.y-bird.r<0||bird.y+bird.r>H*.87)return true;
+ for(const p of pipes)if(bird.x+bird.r>p.x&&bird.x-bird.r<p.x+p.w&&(bird.y-bird.r<p.top||bird.y+bird.r>p.top+p.gap))return true;
+ return false;
+}
+function over(){
+ running=false;
+ if(score>best){best=score;try{localStorage.setItem("flyingBird2HighScore",best)}catch(e){}bestEl.textContent="🏆 High Score: "+best;title.textContent="🎉 New High Score!"}
+ else title.textContent="Game Over";
+ message.innerHTML="Score: <b>"+score+"</b><br>🏆 High Score: <b>"+best+"</b>";
+ startBtn.textContent="Play Again";panel.classList.remove("hidden");
+}
+function loop(now){
+ if(!running)return;
+ const dt=Math.min((now-last)/16.67,2);last=now;
+ bird.vy+=.38*dt;bird.y+=bird.vy*dt;bird.rot=Math.max(-.45,Math.min(1.15,bird.vy*.075));
+ bird.wing+=bird.wingDir*.22*dt;if(bird.wing>.75){bird.wing=.75;bird.wingDir=-1}if(bird.wing<-.95){bird.wing=-.95;bird.wingDir=1}
+ spawn+=dt*16.67;if(spawn>1750){addPipe();spawn=0}
+ pipes.forEach(p=>p.x-=3.1*dt);
+ for(const p of pipes)if(!p.passed&&p.x+p.w<bird.x){p.passed=true;score++;scoreEl.textContent=score;if(score>best)bestEl.textContent="🏆 High Score: "+score}
+ pipes=pipes.filter(p=>p.x>-100);
+ if(collision()){over();return}
+ sky();pipes.forEach(pipe);birdDraw();groundDraw();requestAnimationFrame(loop);
+}
+startBtn.addEventListener("click",e=>{e.stopPropagation();start()});
+canvas.addEventListener("pointerdown",e=>{e.preventDefault();flap()});
+addEventListener("keydown",e=>{if(e.code==="Space"||e.code==="ArrowUp"){e.preventDefault();running?flap():start()}});
+resize();bird={x:W*.23,y:H*.43,vy:0,r:17,wing:-.2,wingDir:1,rot:0};sky();birdDraw();groundDraw();
+})();
+</script>
+</body>
+</html>
